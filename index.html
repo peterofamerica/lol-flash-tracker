@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LOL Flash Tracker</title>
+
+<style>
+
+body{
+    background:#111;
+    color:white;
+    font-family:Arial,sans-serif;
+    margin:10px;
+}
+
+h1{
+    text-align:center;
+}
+
+#gameClock{
+    text-align:center;
+    font-size:48px;
+    font-weight:bold;
+    color:#00ff88;
+    margin:20px 0;
+}
+
+button{
+    border:none;
+    border-radius:12px;
+}
+
+.controlBtn{
+    width:100%;
+    padding:14px;
+    font-size:20px;
+    margin-bottom:8px;
+}
+
+#resetBtn{
+    background:#b22222;
+    color:white;
+}
+
+.syncBox{
+    text-align:center;
+    margin:10px 0;
+}
+
+.syncBox input{
+    width:70px;
+    font-size:22px;
+    text-align:center;
+}
+
+.laneBtn{
+    width:100%;
+    padding:18px;
+    margin:8px 0;
+    color:white;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.ready{
+    background:#1f6f3d;
+}
+
+.cooldown{
+    background:#7a1f1f;
+}
+
+.warning{
+    background:#8a6a00;
+}
+
+.small{
+    font-size:18px;
+}
+
+.big{
+    font-size:36px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>LOL Flash Tracker</h1>
+
+<div id="gameClock">00:00</div>
+
+<button id="startBtn" class="controlBtn">
+START GAME
+</button>
+
+<button id="resetBtn" class="controlBtn">
+RESET GAME
+</button>
+
+<div class="syncBox">
+
+<input id="syncMin" placeholder="Min">
+
+:
+
+<input id="syncSec" placeholder="Sec">
+
+<button id="syncBtn">
+SYNC
+</button>
+
+</div>
+
+<div id="container"></div>
+
+<script>
+
+const FLASH_CD = 300;
+
+const lanes = [
+"TOP",
+"JG",
+"MID",
+"ADC",
+"SUP"
+];
+
+let gameStart = null;
+
+let flashData = {};
+
+let warned = {};
+
+function speak(text)
+{
+    try
+    {
+        const msg =
+        new SpeechSynthesisUtterance(text);
+
+        msg.lang = "en-US";
+
+        speechSynthesis.speak(msg);
+    }
+    catch(e){}
+}
+
+function format(sec)
+{
+    const m =
+    Math.floor(sec/60);
+
+    const s =
+    String(sec%60)
+    .padStart(2,"0");
+
+    return `${m}:${s}`;
+}
+
+function getGameTime()
+{
+    if(gameStart === null)
+        return 0;
+
+    return Math.floor(
+        (Date.now()-gameStart)/1000
+    );
+}
+
+document
+.getElementById("startBtn")
+.onclick = () =>
+{
+    gameStart = Date.now();
+};
+
+document
+.getElementById("syncBtn")
+.onclick = () =>
+{
+    const min =
+    Number(
+        document
+        .getElementById("syncMin")
+        .value || 0
+    );
+
+    const sec =
+    Number(
+        document
+        .getElementById("syncSec")
+        .value || 0
+    );
+
+    const gameSec =
+    min*60 + sec;
+
+    gameStart =
+    Date.now()
+    -
+    gameSec*1000;
+};
+
+document
+.getElementById("resetBtn")
+.onclick = () =>
+{
+    gameStart = null;
+
+    flashData = {};
+
+    warned = {};
+};
+
+const container =
+document.getElementById(
+    "container"
+);
+
+lanes.forEach(lane => {
+
+    warned[lane] = false;
+
+    const btn =
+    document.createElement(
+        "button"
+    );
+
+    btn.id = lane;
+
+    btn.className =
+    "laneBtn ready";
+
+    btn.onclick = () =>
+    {
+        const gameTime =
+        getGameTime();
+
+        if(
+            flashData[lane]
+            &&
+            flashData[lane] > gameTime
+        )
+        {
+            delete flashData[lane];
+
+            warned[lane] = false;
+
+            return;
+        }
+
+        flashData[lane] =
+        gameTime + FLASH_CD;
+
+        warned[lane] = false;
+    };
+
+    container.appendChild(btn);
+
+});
+
+function update()
+{
+    const gameTime =
+    getGameTime();
+
+    document
+    .getElementById(
+        "gameClock"
+    )
+    .innerText =
+    format(gameTime);
+
+    lanes.forEach(lane => {
+
+        const btn =
+        document
+        .getElementById(lane);
+
+        const readyAt =
+        flashData[lane] || 0;
+
+        if(
+            readyAt <= gameTime
+        )
+        {
+            btn.className =
+            "laneBtn ready";
+
+            btn.innerHTML =
+            `
+            <div>${lane}</div>
+            <div class="big">
+            READY
+            </div>
+            `;
+
+            return;
+        }
+
+        const remain =
+        readyAt - gameTime;
+
+        if(remain <= 30)
+        {
+            btn.className =
+            "laneBtn warning";
+
+            if(!warned[lane])
+            {
+                warned[lane] = true;
+
+                speak(
+                    lane +
+                    " flash thirty seconds"
+                );
+            }
+        }
+        else
+        {
+            btn.className =
+            "laneBtn cooldown";
+        }
+
+        if(remain === 1)
+        {
+            speak(
+                lane +
+                " flash ready"
+            );
+        }
+
+        btn.innerHTML =
+        `
+        <div>${lane}</div>
+
+        <div class="small">
+        Ready @ ${format(readyAt)}
+        </div>
+
+        <div class="big">
+        ${format(remain)}
+        </div>
+        `;
+    });
+}
+
+setInterval(update,1000);
+
+update();
+
+</script>
+
+</body>
+</html>
