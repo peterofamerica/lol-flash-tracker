@@ -119,7 +119,7 @@ SYNC
 
 <script>
 
-const FLASH_CD = 40;
+const FLASH_CD = 300;
 
 const lanes = [
 "TOP",
@@ -175,6 +175,15 @@ document
 .getElementById("startBtn")
 .onclick = () =>
 {
+    speechSynthesis.cancel();
+
+    const unlock =
+    new SpeechSynthesisUtterance("ready");
+
+    unlock.volume = 0;
+
+    speechSynthesis.speak(unlock);
+
     gameStart = Date.now();
 };
 
@@ -305,7 +314,7 @@ function update()
         const remain =
         readyAt - gameTime;
 
-        if(remain === 30)
+        if(remain <= 30)
         {
             btn.className =
             "laneBtn warning";

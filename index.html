@@ -100,9 +100,6 @@ START GAME
 <button id="resetBtn" class="controlBtn">
 RESET GAME
 </button>
-<button id="testVoiceBtn" class="controlBtn">
-TEST VOICE
-</button>
 
 <div class="syncBox">
 
@@ -178,6 +175,15 @@ document
 .getElementById("startBtn")
 .onclick = () =>
 {
+    speechSynthesis.cancel();
+
+    const unlock =
+    new SpeechSynthesisUtterance("ready");
+
+    unlock.volume = 0;
+
+    speechSynthesis.speak(unlock);
+
     gameStart = Date.now();
 };
 
@@ -217,15 +223,6 @@ document
     flashData = {};
 
     warned = {};
-};
-
-document
-.getElementById("testVoiceBtn")
-.onclick = () =>
-{
-    speak(
-        "ADC flash thirty seconds"
-    );
 };
 
 const container =
@@ -317,7 +314,7 @@ function update()
         const remain =
         readyAt - gameTime;
 
-        if(remain === 30)
+        if(remain <= 30)
         {
             btn.className =
             "laneBtn warning";
