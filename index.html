@@ -84,6 +84,28 @@ button{
     font-size:36px;
 }
 
+.laneContent{
+    display:flex;
+    align-items:center;
+    position:relative;
+}
+
+.laneIcon{
+    width:80px;
+    height:80px;
+    object-fit:contain;
+    margin-left:20px;
+    margin-right:40px;
+    flex-shrink:0;
+}
+
+.laneText{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+}
+
 </style>
 </head>
 
@@ -128,6 +150,14 @@ const lanes = [
 "ADC",
 "SUP"
 ];
+
+const laneIcons = {
+    TOP : "icons/top.png",
+    JG  : "icons/jg.png",
+    MID : "icons/mid.png",
+    ADC : "icons/adc.png",
+    SUP : "icons/sup.png"
+};
 
 let gameStart = null;
 
@@ -302,9 +332,23 @@ function update()
 
             btn.innerHTML =
             `
-            <div>${lane}</div>
-            <div class="big">
-            READY
+            <div class="laneContent">
+
+                <img
+                    class="laneIcon"
+                    src="${laneIcons[lane]}"
+                >
+
+                <div class="laneText">
+
+                    <div>${lane}</div>
+
+                    <div class="big">
+                    READY
+                    </div>
+
+                </div>
+
             </div>
             `;
 
@@ -345,14 +389,27 @@ function update()
 
         btn.innerHTML =
         `
-        <div>${lane}</div>
+        <div class="laneContent">
 
-        <div class="small">
-        Ready @ ${format(readyAt)}
-        </div>
+            <img
+                class="laneIcon"
+                src="${laneIcons[lane]}"
+            >
 
-        <div class="big">
-        ${format(remain)}
+            <div class="laneText">
+
+                <div>${lane}</div>
+
+                <div class="small">
+                Ready @ ${format(readyAt)}
+                </div>
+
+                <div class="big">
+                ${format(remain)}
+                </div>
+
+            </div>
+
         </div>
         `;
     });
