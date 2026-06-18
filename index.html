@@ -30,6 +30,7 @@ h1{
 button{
     border:none;
     border-radius:12px;
+    transition:all 0.08s ease;
 }
 
 .controlBtn{
@@ -88,6 +89,7 @@ button{
     display:flex;
     align-items:center;
     position:relative;
+    pointer-events:none;
 }
 
 .laneIcon{
@@ -97,13 +99,77 @@ button{
     margin-left:20px;
     margin-right:40px;
     flex-shrink:0;
+    pointer-events:none;
 }
+
 
 .laneText{
     position:absolute;
     left:50%;
     transform:translateX(-50%);
     text-align:center;
+    pointer-events:none;
+}
+
+.laneRow{
+    display:flex;
+    align-items:stretch;
+    gap:8px;
+    margin:8px 0;
+}
+
+.laneBtn{
+    flex:1;
+}
+
+
+.sideBox{
+    display:flex;
+    flex-direction:row;
+    gap:8px;
+    align-items:stretch;
+}
+
+.adjustBox{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.perksBox{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.perkBtn{
+    width:60px;
+    height:60px;
+    background:#222;
+    color:white;
+    font-size:14px;
+    font-weight:bold;
+}
+.perkBtn.active{
+    border:3px solid #ffd700;
+    box-shadow:0 0 12px #ffd700;
+    filter:brightness(1.2);
+}
+
+.adjustBtn{
+    width:70px;
+    flex:1;
+    background:#333;
+    color:white;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.laneBtn:active,
+.adjustBtn:active,
+.controlBtn:active{
+    transform:scale(0.95);
+    filter:brightness(0.85);
 }
 
 </style>
@@ -164,6 +230,8 @@ let gameStart = null;
 let flashData = {};
 
 let warned = {};
+let laneBoots = {};
+let laneCI = {};
 
 function speak(text)
 {
@@ -201,6 +269,21 @@ function getGameTime()
     );
 }
 
+function getFlashCD(lane)
+{
+    let ssh = 0;
+
+    if(laneBoots[lane])
+        ssh += 10;
+
+    if(laneCI[lane])
+        ssh += 18;
+
+    return Math.round(
+        300 / (1 + ssh / 100)
+    );
+}
+
 document
 .getElementById("startBtn")
 .onclick = () =>
@@ -215,6 +298,7 @@ document
     speechSynthesis.speak(unlock);
 
     gameStart = Date.now();
+    update();
 };
 
 document
@@ -242,6 +326,7 @@ document
     Date.now()
     -
     gameSec*1000;
+    update();
 };
 
 document
@@ -253,6 +338,23 @@ document
     flashData = {};
 
     warned = {};
+    laneBoots = {};
+    laneCI = {};
+
+    document
+    .querySelectorAll(".perkBtn")
+    .forEach(btn =>
+    {
+        btn.classList.remove("active");
+    });
+
+    lanes.forEach(lane =>
+    {
+        warned[lane] = false;
+        laneBoots[lane] = false;
+        laneCI[lane] = false;
+    });
+    update();
 };
 
 const container =
@@ -263,11 +365,17 @@ document.getElementById(
 lanes.forEach(lane => {
 
     warned[lane] = false;
+    laneBoots[lane] = false;
+    laneCI[lane] = false;
+
+    const row =
+    document.createElement("div");
+
+    row.className =
+    "laneRow";
 
     const btn =
-    document.createElement(
-        "button"
-    );
+    document.createElement("button");
 
     btn.id = lane;
 
@@ -280,25 +388,123 @@ lanes.forEach(lane => {
         getGameTime();
 
         if(
-            flashData[lane]
-            &&
-            flashData[lane] > gameTime
+            flashData[lane] !== undefined
         )
         {
             delete flashData[lane];
 
             warned[lane] = false;
 
+            update();
+
             return;
         }
 
         flashData[lane] =
-        gameTime + FLASH_CD;
+        gameTime +
+        getFlashCD(lane);
 
         warned[lane] = false;
+        update();
     };
 
-    container.appendChild(btn);
+    // Insert sideBox, perksBox, and perkBtn(s) before adjustBox
+    const sideBox =
+        document.createElement("div");
+    sideBox.className =
+        "sideBox";
+    const perksBox =
+        document.createElement("div");
+    perksBox.className =
+        "perksBox";
+    const lcBtn =
+        document.createElement("button");
+    lcBtn.className =
+        "perkBtn";
+    lcBtn.innerHTML =
+        '<img src="icons/lc.png" style="width:100%;height:100%;object-fit:contain;">';
+    lcBtn.onclick = () =>
+    {
+        laneBoots[lane] = !laneBoots[lane];
+
+        lcBtn.classList.toggle(
+            "active",
+            laneBoots[lane]
+        );
+        update();
+    };
+    const ciBtn =
+        document.createElement("button");
+    ciBtn.className =
+        "perkBtn";
+    ciBtn.innerHTML = 
+        '<img src="icons/ci.png" style="width:100%;height:100%;object-fit:contain;">';
+    ciBtn.onclick = () =>
+    {
+        laneCI[lane] = !laneCI[lane];
+
+        ciBtn.classList.toggle(
+            "active",
+            laneCI[lane]
+        );
+        update();
+    };
+    perksBox.appendChild(lcBtn);
+    perksBox.appendChild(ciBtn);
+
+    const adjustBox =
+    document.createElement("div");
+
+    adjustBox.className =
+    "adjustBox";
+
+    const minus5 =
+    document.createElement("button");
+
+    minus5.className =
+    "adjustBtn";
+
+    minus5.innerText =
+    "-5";
+
+    minus5.onclick = () =>
+    {
+        if(flashData[lane])
+        {
+            flashData[lane] -= 5;
+            update();
+        }
+    };
+
+    const minus10 =
+    document.createElement("button");
+
+    minus10.className =
+    "adjustBtn";
+
+    minus10.innerText =
+    "-10";
+
+    minus10.onclick = () =>
+    {
+        if(flashData[lane])
+        {
+            flashData[lane] -= 10;
+            update();
+        }
+    };
+
+    adjustBox.appendChild(minus5);
+    adjustBox.appendChild(minus10);
+
+    // Compose the sideBox: perksBox (vertical col), then adjustBox (vertical col)
+    sideBox.appendChild(perksBox);
+    sideBox.appendChild(adjustBox);
+
+    row.appendChild(btn);
+    row.appendChild(sideBox);
+
+    container.appendChild(row);
 
 });
 
@@ -415,7 +621,7 @@ function update()
     });
 }
 
-setInterval(update,1000);
+setInterval(update,250);
 
 update();
 
