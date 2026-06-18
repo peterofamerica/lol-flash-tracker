@@ -100,9 +100,6 @@ START GAME
 <button id="resetBtn" class="controlBtn">
 RESET GAME
 </button>
-<button id="testVoiceBtn" class="controlBtn">
-TEST VOICE
-</button>
 
 <div class="syncBox">
 
@@ -122,7 +119,7 @@ SYNC
 
 <script>
 
-const FLASH_CD = 300;
+const FLASH_CD = 40;
 
 const lanes = [
 "TOP",
@@ -217,15 +214,6 @@ document
     flashData = {};
 
     warned = {};
-};
-
-document
-.getElementById("testVoiceBtn")
-.onclick = () =>
-{
-    speak(
-        "ADC flash thirty seconds"
-    );
 };
 
 const container =
